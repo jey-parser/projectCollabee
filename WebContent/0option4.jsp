@@ -1,0 +1,228 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="com.yr.dto.*" %>
+<%@ page import="com.yr.dao.*" %>
+
+<!--
+	1. 작성자 : 김유라(다른 팀원 코드는 주석에 표기)
+	2. 파일의 역할 : 파트너 관리 페이지
+ -->
+
+<%
+	Collabee_newinfoDao infoDao = new Collabee_newinfoDao();
+	ArrayList<Collabee_newinfoDto> listAll = infoDao.getAllBoardList();
+	int loginId = (Integer)(session.getAttribute("loginId"));
+	int corporation_id = (Integer)session.getAttribute("corporation_id");
+%>
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>협업툴 콜라비 - 한 장으로 끝! 문서기반 협업툴, 콜라비</title>
+	<link rel="icon" href="images/favicon.ico" type="image/x-icon">
+	<script src="js/jquery-3.6.0.min.js"></script>
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+  	<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+  	<link href="CollaStyle/0option4.css" rel="stylesheet" type="text/css">
+  	
+
+	<script>
+	$(function(){
+		$("#btn1").click(function(){
+			alert("준비중입니다.")
+		});
+		$("#btn2").click(function(){
+			alert("준비중입니다.")
+		});
+		$(".btn").mouseenter(function(){
+			$(this).css("color","gray");
+		});
+		$(".btn").mouseleave(function(){
+			$(this).css("color","black");
+		});
+		$("#btn3").click(function(){
+            $("#hidePartnerManagementOn").css("display","block");
+            $.ajax({
+            	type: 'get',
+            	url: 'Controller?command=PartnerHiddenAction',
+            	data: {
+            		"login_id":<%=loginId%>
+            	},
+            	datatype: 'json',
+            	success: function(data){
+            		$.each(data, function(idex,item){
+            			var hiddenPartentInformation =
+            				"<div class='hidePartnerBox' loginId='"+item.member_id+"'>" +
+                        		"<div><img src='image/"+item.picture+"'/></div>" +
+                       			"<div class='hiddenMemberDiv'>" +
+                           			"<p class='memberName'>"+item.name+"</p>" +
+                            		"<p class='memberMail'>"+item.email+"</p>" +
+                        		"</div>" +
+                        		"<form action='PartnerBlockServlet' method='post'>" +
+                        			"<input type='button' class='partnerBlockBtn' value='숨김 해제'/>" +
+                        			"<input type='hidden' class='loginId' name='loginId'/>" +
+                        			"<input type='hidden' class='memberId' name='memberId'/>" +
+                        		"</form>" +
+                    		"</div>";
+                    	$("#hidePartnerList").append(hiddenPartentInformation);
+            		});
+            	},
+            	error: function(r,s,e){
+            		
+            	}
+            });
+        });
+        $(document).on("click",".partnerBlockBtn",function(){
+            $(this).parent().parent().remove();
+            var member_id = $(this).parent().parent().attr("loginId");
+            $(this).parent().parent().find(".loginId").val(loginId);
+            $(this).parent().parent().find(".memberId").val(member_id);
+            $(this).parent().submit();
+        });
+		
+		$("#ready1, #ready2").click(function(){
+			alert("서비스가 준비 중입니다.");
+		});
+		
+		$('.updatebox').mouseenter(function() {
+            $(this).find('.updatespan1').css("color","rgb(83, 83, 83)");
+		});
+        $('.updatebox').mouseleave(function() {
+        	$(this).find('.updatespan1').css("color","rgb(136, 136, 136)");
+        });
+        $('.updatebox').click(function() {
+        	var order = $(this).attr("title");
+        	
+        	
+        	$.ajax({
+        		type: 'get',
+        		url: 'Controller?command=Board',
+        		data: { "newinfo" : order},
+        		datatype: "json",
+        		success: function(d){
+        			$('.modal_background').css("display", 'block');
+        			var title = d.title;
+        			var content = d.content;
+        			var creation_date = d.creation_date;
+        			$("#title").text(title);
+        			$("#content").text(content);
+        			$("#date").text(creation_date);
+        		},
+        		error: function(r,s,e){
+        			alert("error!");
+        		}
+        	});
+        });
+        
+        $("#searchbar").keypress(function(e){
+     	   if(e.keyCode == 13){
+     		   var search = $(this).val();
+     		   location.href="Controller?command=SearchP1&search="+search+"&member_id=<%=loginId%>";
+     	   }
+ 	    });
+ 		
+        //문서작성버튼
+ 		$("#posting_bnt").on("click", function(){ 
+ 			$.ajax({   
+ 				type:"post",
+ 				url:"Controller?command=getPrivateId", //프라이빗 공간 찾기
+ 				data:{
+ 					"loginId": <%=loginId%>
+ 				},
+ 				datatype:"json",
+ 				success:function(data){
+ 					location.href="Controller?command=writedocument&loginId=<%=loginId%>&workspaceId="+data.workspaceId;
+ 				},
+ 				error:function(r,s,e){
+ 					alert("error!");
+ 				}
+ 			}); 			
+ 		});
+	});
+	</script>
+	<!-- 강태안 -->
+	<script>
+	
+	$(function(){
+		$(".home_btn21").on("click", function(){
+			$("#partnerInviteBox").css("display","block");
+			$('.homehead_background1').css('display', 'block');
+		});
+		
+		$('.homehead_background1').click(function(){
+			var result = confirm('파트너 초대를 그만하고 나가시겠습니까?');
+			if(result){
+				$("#partnerInviteBox").css("display","none");
+		        $('.homehead_background1').css("display", "none");
+			}
+		});
+		
+		$("#invitePartner").click(function(){
+		    $("#partnerInviteBox").css("display","block");
+		    $('.homehead_background1').css("display", "block");
+		});
+		
+		$("#inviteXbtn").click(function(){
+		    $("#partnerInviteBox").css("display","none");
+		    $('.homehead_background1').css("display", "none");
+		    $("#inviteMails").html("");
+		});
+	});
+	
+	</script>
+</head>
+<body style="overflow-y: hidden; overflow-x: hidden;">
+<%@ include file="WEB-INF/include/include_PartnerModal.jspf" %>
+	<div class="update_layout">
+	<%@ include file="WEB-INF/include/HomeSidebar2.jspf" %>		
+		<main class="infoupdate_main">
+			<header class="infoupdate_header">
+				<div class="infoupdate_top">
+					<div class="infoupdate_title">
+						<div>
+							<h1 class="h1">설정</h1>
+						</div>
+						<div>
+				    		<div class="mastersearchbar">
+						        <div id="search_icon" class="bnt_base"><svg class="micro" viewBox="0 0 24 24" width="16px" height="16px"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg></div>
+						        <input type ="text" id=searchbar placeholder="검색"/>
+						        <button id="posting_bnt">
+						            <svg viewBox="0 0 24 24" width="13px" height="13px" ><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a.996.996 0 0 0 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" class="posting_icon" ></path></svg>
+						            <span>문서 작성</span>
+						        </button>
+				        	</div>
+			        	</div>
+			    	</div>
+			    	<div class="infoupdate_topright">
+			    		<%@ include file="WEB-INF/include/homehead4.jspf" %>
+			    	</div>
+		    	</div>
+		    	<div class="header_mid">
+		    		<nav class="sort">
+		    			<a class="m" href="Controller?command=option1">내 정보</a>
+		    			<a class="m" href="Controller?command=option2">알림</a>
+		    			<a class="m selected" href="#">파트너 관리</a>
+		    			<a class="m" id="ready1">외부 서비스</a>
+		    			<a class="m" href="Controller?command=settingPrice&loginId=<%=loginId%>">가격 및 결제</a>
+		    			<a class="m" href="Controller?command=option3">업데이트</a>
+		    			<a class="m" id="ready2">Webhook &#946;</a>
+		    		</nav>
+		    	</div>
+		    	<div id="partnerManagementCategory"> 
+			        <button class="btn" id="btn1">협업공간 일괄 초대</button>
+			        <button class="btn" id="btn2">멤버 일괄 탈퇴</button>
+			        <button class="btn" id="btn3"> 숨긴 파트너 관리</button>
+		    	</div>
+			</header>
+			<div id="hidePartnerManagementOn">
+        		<div id="hidePartnerManagement">
+		            <h3>숨긴 파트너 관리</h3>
+		            <p>파트너를 '숨김 해제' 하면, 프라이빗 공간 내 문서에서 해당 파트너를 공유자로 추가할 수 있습니다.</p>
+		        </div>
+		        <div id="hidePartnerList"></div>
+		    </div>
+		</main>
+	</div>	
+</body>
+</html>

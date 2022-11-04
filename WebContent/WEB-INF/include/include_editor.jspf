@@ -1,0 +1,215 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+    
+<!DOCTYPE html>
+
+<!--
+	1. 작성자 : 강지현(다른 팀원 코드는 주석에 표기)
+	2. 파일의 역할 : 문서 에디터 api 페이지
+ -->
+ 
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>문서에디터</title>
+  
+	<style>
+		.codex-editor--narrow .codex-editor__redactor{
+			width:600px;
+		}
+	</style>
+</head>
+<body>
+	<div class="ce-example">
+	    <div class="ce-example__header"></div>
+	    <div class="ce-example__content _ce-example__content--small">
+	    	<div id="editorjs"></div>
+	    </div>
+    </div>
+    
+    <div class="ce-example__output">
+	    <pre class="ce-example__output-content" id="output"></pre>
+	    <div class="ce-example__output-footer"></div>
+    </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/header@latest"></script><!-- Header -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/simple-image@latest"></script><!-- Image -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@latest"></script><!-- Delimiter -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/list@latest"></script><!-- List -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/checklist@latest"></script><!-- Checklist -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@latest"></script><!-- Quote -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/code@latest"></script><!-- Code -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/embed@latest"></script><!-- Embed -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/table@latest"></script><!-- Table -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/link@latest"></script><!-- Link -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/warning@latest"></script><!-- Warning -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/marker@latest"></script><!-- Marker -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/inline-code@latest"></script><!-- Inline Code -->
+
+  <!-- Load Editor.js's Core -->
+  <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@latest"></script>
+
+  <!-- Initialization -->
+  <script>
+	var workspaceId = <%=request.getParameter("workspaceId")%>;
+	var documentId = <%=request.getAttribute("documentId")%>;
+	var loginId = <%=loginId%>;
+	var x="<svg viewBox='0 0 24 24' width='24px' height='24px' class='closed'><path fill='rgb(255,255,255)' d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'></path></svg>";
+    	
+	/**
+     * To initialize the Editor, create a new instance with configuration object
+     * @see docs/installation.md for mode details
+     */
+    var editor = new EditorJS({ //선언
+      /**
+       * Enable/Disable the read only mode
+       */
+      readOnly: false,
+
+      /**
+       * Wrapper of Editor
+       */
+      holder: 'editorjs',
+
+      /**
+       * Common Inline Toolbar settings
+       * - if true (or not specified), the order from 'tool' property will be used
+       * - if an array of tool names, this order will be used
+       */
+      inlineToolbar: ['link', 'marker', 'bold', 'italic'],
+      inlineToolbar: true,
+
+      /**
+       * Tools list
+       */
+      tools: {
+        /**
+         * Each Tool is a Plugin. Pass them via 'class' option with necessary settings {@link docs/tools.md}
+         */
+        header: {
+          class: Header,
+          inlineToolbar: ['marker', 'link'],
+          config: {
+			placeholder: 'good'
+          },
+          shortcut: 'CMD+SHIFT+H'
+        },
+
+        /**
+         * Or pass class directly without any configuration
+         */
+        image: SimpleImage,
+
+        list: {
+          class: List,
+          inlineToolbar: true,
+          shortcut: 'CMD+SHIFT+L'
+        },
+
+        checklist: {
+          class: Checklist,
+          inlineToolbar: true,
+        },
+
+        quote: {
+          class: Quote,
+          inlineToolbar: true,
+          config: {
+            quotePlaceholder: 'Enter a quote',
+            captionPlaceholder: 'Quote\'s author',
+          },
+          shortcut: 'CMD+SHIFT+O'
+        },
+
+        warning: Warning,
+
+        marker: {
+          class:  Marker,
+          shortcut: 'CMD+SHIFT+M'
+        },
+
+        code: {
+          class:  CodeTool,
+          shortcut: 'CMD+SHIFT+C'
+        },
+
+        delimiter: Delimiter,
+
+        inlineCode: {
+          class: InlineCode,
+          shortcut: 'CMD+SHIFT+C'
+        },
+
+        linkTool: LinkTool,
+
+        embed: Embed,
+
+        table: {
+          class: Table,
+          inlineToolbar: true,
+          shortcut: 'CMD+ALT+T'
+        },
+      }
+    });
+
+    /**
+     * Saving button
+     */
+    const saveButton = document.getElementById('saveButton');//id가 saveButton인 애가 저장버튼이라는 선언
+
+    /**
+     * Toggle read-only button
+     */
+    const toggleReadOnlyButton = document.getElementById('toggleReadOnlyButton');
+    const readOnlyIndicator = document.getElementById('readonly-state');
+
+    /**
+     * Saving example
+     */
+     
+    var documentId = <%=request.getAttribute("documentId")%>;
+	saveButton.addEventListener('click', function () {
+      editor.save()//저장 메서드
+        .then(function(savedData) {
+        	console.log(savedData);
+
+			$.ajax({
+				type:"post",
+				url:"Controller?command=saveDocument",
+				data: /* savedData */
+				{
+ 					"loginId":loginId,
+					"workspaceId":workspaceId,
+  					"title":$(".document_title").val(),
+					"content": JSON.stringify(savedData), 
+					"documentId": documentId
+				},
+				datatype:"json",
+				success:function(data){
+					var alert_message = $(".alert").html(x+"저장 됐습니다.");
+						alert_message.fadeIn(function(){
+			              	setTimeout(function(){
+			                alert_message.fadeOut();
+			              }, 2000);
+			            });
+			            //글자수에 따라 높이 정하기
+			            var height = alert_message.prop("scrollHeight");
+			            alert_message.css("height", height);
+			            
+			         var workspaceId = $("#drafts_ws").attr("workspaceId"); 
+			         var workspaceName = $("#drafts_ws").text();
+			         location.href="Controller?command=showNewDocument&documentId="+documentId+"&workspaceId="+<%=request.getParameter("workspaceId")%>+"&loginId=<%=loginId%>";
+				},
+				error:function(r,s,e) {
+					console.log("ERROR - ajax:saveDocument");
+				}
+			});
+        })
+        .catch(function(error) {
+          	console.error('Saving error', error);
+        });
+    });
+  </script>
+</body>
+</html>

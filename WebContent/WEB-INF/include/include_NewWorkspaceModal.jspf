@@ -1,0 +1,223 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<!--
+	1. 작성자 : 강지현(다른 팀원 코드는 주석에 표기)
+	2. 파일의 역할 : 새 협업공간 만들기 모달창
+ -->
+    
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="CollaStyle/newWorkspace.css" rel="stylesheet" type="text/css">
+<title>새 협업공간 만들기</title>
+    
+  <script>
+	var workspaceId = <%=request.getParameter("workspaceId")%>;
+	var workspaceName = "<%=request.getParameter("workspaceName")%>";
+	var loginId = <%=loginId%>; 
+	
+     $(document).ready(function() {
+    	 $(".new_workspace").click(function(){
+         	$("#cws").removeClass("none");
+         });
+    	 
+         var x = "<svg viewBox='0 0 24 24' width='24px' height='24px' class='closed'><path fill='rgb(255,255,255)' d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'></path></svg>";
+        //협업공간이름 글자수
+        $("#setname_cws").on("keyup", function(){
+        	$("#name_cnt_cws").removeClass("hidden"); //글자수 뜨기
+            var length = $(this).val().length;
+            $("#cnt1").html(length);
+            
+            if(length > 28) {
+                var alert_message = $(".alert").html(x+"협업공간 이름은 28자까지 설정할 수 있습니다.");
+                $("#cnt1").html(28);
+                alert_message.fadeIn(function(){
+                    setTimeout(function() {
+                        alert_message.fadeOut() //3초후에 자동으로 닫힘
+                    }, 2000);
+		            //안내메세지 높이
+		            var height = alert_message.prop("scrollHeight");
+		            alert_message.css("height", height);
+                });
+            } else if(length==0){
+            	$("#name_cnt_cws").addClass("hidden");
+            }
+        });
+        
+         //협업공간이름 안쓰고 만들기 누르면
+		$("#create_bnt_cws").click(function(){
+        	var length = $("#setname_cws").val().length;
+            if(length == 0) {
+                var alert_message = $(".alert").html(x+"협업공간 이름은 1글자 이상 입력해야 합니다.");
+                alert_message.fadeIn(function(){
+	                setTimeout(function() {
+                    alert_message.fadeOut() //3초후에 자동으로 닫힘
+                }, 2000);
+	            //안내메세지 높이
+	            var height = alert_message.prop("scrollHeight");
+	            alert_message.css("height", height);
+               });
+	        } else {//잘 만들어졌으면
+	        	$("#container4_wi .nonPost").css("display","flex");
+	            var title = $("#setname_cws").val();
+	            var summary = $("#setsummary_cws").val();
+				$("#cws").addClass("none");
+	          	$("#name_cnt_cws, #summary_cnt_cws").addClass("hidden");
+	            $("#invite_member").removeClass("none");
+	            
+	            $.ajax({
+	            	type:"post",
+	            	url:"Controller?command=newWorkspace",
+	            	data:{
+	            		"title" : title,
+	            		"summary" : summary,
+	            		"loginId" : loginId
+	            	},
+	            	datatype:"json",
+	            	success:function(data){
+	            			$.ajax({//workspace_order에 넣어주고 사이드바 밑에 넣기
+		    	            	type:"post",
+		    	            	url:"Controller?command=AddOrder",
+		    	            	data:{
+		    	            		"loginId" : <%=loginId%>,
+		    	            		"workspace_id":data.workspaceId
+		    	            	},
+		    	            	datatype:"json",
+		    	            	success:function(){
+		    	            		alert("2");
+		    	            		var str = "<div class='f_container' workspaceId='" + data.workspaceId + "'>"
+		    						+ "<svg viewBox='0 0 24 24' width='12px' height='12px' class='svg4'><path d='M8 5.4A2.2 2.2 0 1 1 8 1a2.2 2.2 0 0 1 0 4.4zm0 8.8a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4zM8 23a2.2 2.2 0 1 1 0-4.4A2.2 2.2 0 0 1 8 23zm8-17.6A2.2 2.2 0 1 1 16 1a2.2 2.2 0 0 1 0 4.4zm0 8.8a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4zm0 8.8a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4z' color='#C1C1C1'></path></svg>"
+		    						+ "<div class='f_continer2'>"
+		    						+	"<div class='f_container3'>"
+		    						+		"<div>"
+		    						+			"<svg viewBox='0 0 24 24' width='16px' height='16px' class='svg5'><path d='M14.027 5L13.6 3H4v18h2v-7h6l.533 2H20V5z'></path></path></svg>"
+		    						+		"</div>"
+		    						+		"<div style='margin-top: 5px;' class='name' title='" + data.workspace_name + "'>" + data.workspace_name + "</div>"
+		    						+	"</div>"
+		    						+"</div>"
+		    						+"</div>"
+		    	            		$(".folder1").append(str);
+		    	            	},
+		    	            	error:function(r,s,e){
+		    	            		alert("workspace_order error");
+		    	            	}
+		    	            });
+	            			var alert_message = $(".alert").html(x+title +" 협업공간이 생성되었습니다.");
+				            alert_message.fadeIn(function(){
+					            setTimeout(function() {
+									alert_message.fadeOut() //3초후에 자동으로 닫힘
+					            }, 2000);
+					            //안내메세지 높이
+					            var height = alert_message.prop("scrollHeight");
+					            alert_message.css("height", height);
+				            });
+							$.ajax({//칸반 생성
+		    	            	type:"post",
+		    	            	url:"Controller?command=KanbanNewWS",
+		    	            	data:{
+		    	            		"workspace_id":data.workspaceId
+		    	            	},
+		    	            	datatype:"json",
+		    	            	success:function(){
+		    	            		
+		    	            	}
+		    	            });
+			        	$("#setname_cws, #setsummary_cws, #cnt1, #cnt2").val("");
+						location.href="Controller?command=select_Workspace_Index&loginId="+loginId+"&workspaceId="+data.workspaceId;
+	    	        },
+	            	error:function(r,s,e) {
+	            		alert("다시 시도해 주세요.");
+	            	}
+	            });
+			}//멤버초대 모달이 이어서 뜸
+        });   
+		        
+        //설명 글자수
+        $('#setsummary_cws').on('keyup', function() {
+       	$("#summary_cnt_cws").removeClass("hidden");
+           var length=$(this).val().length;
+           $('#cnt2').html(length);
+
+           if(length > 100) {
+               var alert_message = $(".alert").html(x+"협업공간 설명은 100자까지 입력할 수 있습니다.");
+               $("#cnt2").html(100);
+               alert_message.fadeIn(function(){
+                   setTimeout(function() {
+                       alert_message.fadeOut(); //3초후에 자동으로 닫힘
+                   }, 2000);
+            	//안내메세지 높이
+	            var height = alert_message.prop("scrollHeight");
+	            alert_message.css("height", height);
+               });
+           } else if(length==0){
+           	 $("#summary_cnt_cws").addClass("hidden");
+           }
+       });
+  
+       $("#setname_cws").click(function() {
+           $(this).css("border-bottom-color", "rgb(51, 132, 108)").css("outline", "none");
+       });
+       $("#setname_cws").blur(function() {
+           $(this).css("border-bottom-color", "rgb(225, 225, 225)");
+       });
+       $("#setsummary_cws").click(function() {
+           $(this).css("border-color", "rgb(51, 132, 108)").css("outline", "none");
+       });
+       $("#setsummary_cws").blur(function() {
+           $(this).css("border-color", "rgb(225, 225, 225)");
+       });
+
+        //모달 닫기버튼
+        $("#cancel_bnt_cws, #cws .closing_bnt").click(function(){
+		$("#cws").addClass("none");     
+        	$("#setname_cws, #setsummary_cws, #cnt1, #cnt2").val("");
+        	$("#name_cnt_cws, #summary_cnt_cws").addClass("hidden");
+        });
+		       
+        //다른데 누르면 닫힘
+        $("#cws").on("click", function(e){
+        	if($(this).is(e.target)){
+				$(this).addClass("none");
+				$("#setname_cws, #setsummary_cws, #cnt1, #cnt2").val("");
+	         	$("#name_cnt_cws, #summary_cnt_cws").addClass("hidden");
+        	}
+        });
+    });
+</script>
+</head>
+<body>
+<div class="modal_cws none" id="cws">
+    <section id="create_workspace" class="modal_content">
+    <div id="container1_cws">
+        <header>
+            <div class="header_cws">
+	            <span>새 협업공간 만들기</span>
+	            <button type="button" class="closing_bnt"><svg viewBox="0 0 24 24" width="24px" height="24px"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg></button>
+            </div>
+            <p class="header_summary">협업공간은 함께 일하는 멤버들끼리만 자료를 공유하고 협업할 수 있는 공간입니다.<br/>
+                	협업공간을 만들고 함께 일할 멤버들을 초대해보세요.</p>
+        </header>
+        <div id="container2_cws">
+            <div>
+                <label for="setname_cws">협업공간 이름</label>
+                <input type="text" id="setname_cws" maxlength="29" placeholder="콜라비 디자인 리뉴얼"/>
+            </div>
+            <div id="name_cnt_cws" class="cnt_cws hidden"><span id="cnt1">0</span><span> / 28</span></div>
+            <div>
+                <label for="setsummary_cws">협업공간 설명</label>
+                <textarea id="setsummary_cws" maxlength="101" placeholder="콜라비 서비스 디자인 개선 협업공간"></textarea>
+            </div>
+            <div id="summary_cnt_cws" class="cnt_cws hidden"><span id="cnt2">0</span><span>/ 100</span></div>
+            <footer id="footer_cws">
+                <button type="button" id="cancel_bnt_cws">취소</button>
+                <button type="button" id="create_bnt_cws">만들기</button>
+            </footer>    
+        </div>
+    </div>
+    </section>
+</div>
+
+</body>
+</html>
